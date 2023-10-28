@@ -1,8 +1,8 @@
 from core import *
 from flask import Flask, request
-import hashlib
+import hashlib, re
 app = Flask(__name__)
-
+pattern = re.compile(r".*\.[\w:]+")
 @app.route("/")
 def home():
     return "OK"
@@ -14,6 +14,8 @@ def new():
 @app.route("/transact", methods = ['POST'])
 def tr():
     _from = str(request.form['from'])
+    if pattern.findall(_from) != []:
+        return 'NO'
     to = str(request.form.get('to', False))
     amoun = str(request.form.get('amount', False))
     password = str(request.form.get('password', False))
@@ -33,6 +35,8 @@ def amy():
 def au():
     ah = request.form['user']
     password = request.form['password']
+    if pattern.findall(ah) != []:
+        return 'NO'
     if ah != '':
         if auth(ah, password):
             return 'OK'
