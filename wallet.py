@@ -24,7 +24,7 @@ if(not os.path.exists("setup")):
     else:
         wlet = input("Wallet address>")
         pasw = input("Password>")
-        if("OK" in requests.post(ip+"/auth", data={"user": wlet, "password":pasw}).text):
+        if("OK GOOD" in requests.post(ip+"/auth", data={"user": wlet, "password":pasw}).text):
             print(f"{colorama.Fore.GREEN}You have been succesfully logged in!{colorama.Fore.RESET}")
             f = open("setup", 'w')
             f.write(f"{wlet},{pasw}")
@@ -34,7 +34,7 @@ if(not os.path.exists("setup")):
 else:
     f = open("setup")
     a = f.read().split(',')
-    if("OK" in requests.post(ip+"/auth", data={"user": a[0], "password":a[1]}).text):
+    if("OK GOOD" in requests.post(ip+"/auth", data={"user": a[0], "password":a[1]}).text):
             print(f"{colorama.Fore.GREEN}You have been succesfully logged in!{colorama.Fore.RESET}")
             #Start wallet code here!
             while(True):
@@ -43,7 +43,7 @@ else:
                 if(opt == "1"):
                     amount = input("Amount>")
                     to = input("Recipient wallet>")
-                    if("OK" in requests.post(ip+"/transact", data={"from": a[0], "password":a[1], "to":to, "amount":amount}).text):
+                    if("OK GOOD" in requests.post(ip+"/transact", data={"from": a[0], "password":a[1], "to":to, "amount":amount}).text):
                         print(f"{colorama.Fore.GREEN}Transaction succsessful!{colorama.Fore.RESET}")
                     else:
                         print(f"{colorama.Fore.RED}Transaction unsuccsessful!{colorama.Fore.RESET}")
@@ -51,3 +51,4 @@ else:
                     print(a[0])
     else:
             print(f"{colorama.Fore.RED}You have not been succesfully logged in!{colorama.Fore.RESET}")
+input()
