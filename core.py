@@ -37,13 +37,14 @@ def auth(wallet, password : str):
     global key
     if folderbase.ishere(wallet):
         a = folderbase.read(wallet)
-        if a.split(',')[1] == hashlib.sha256(password.encode()).hexdigest() and hashlib.sha256((a.split(',')[0]+a.split(',')[1]).encode()).hexdigest() == a.split(',')[3]:
+        if a.split(',')[1] == hashlib.sha256(password.encode()).hexdigest() and hashlib.sha256((a.split(',')[0]+a.split(',')[1]).encode()).hexdigest() == a.split(',')[2]:
             return True
         else:
             return False
     else:
         return False
 def verify(tx : int, user : str):
+    #OBSOLETE!!! DO NOT USE!!!
     for i in range(tx, int(folderbase.read('n'))):
         if not folderbase.read(str(i)).split(',')[2] == hashlib.sha256(folderbase.read(str(i-1)).encode()).hexdigest():
             print(f"Wrong block detected! {i - 1}")
@@ -59,3 +60,13 @@ def verify(tx : int, user : str):
             z = int(folderbase.read('n'))
             give(user, z-(z - tx))
     folderbase.write('v', folderbase.read('n'))
+def get_tx(txn):
+    if folderbase.ishere(txn):
+        a = folderbase.read(txn)
+        return a
+    return "NO"
+def wrong_block(txn, wallet):
+    a = folderbase.read(str(int(txn)+1))
+    b = folderbase.read(txn)
+    if(a.split(',')[2] == hashlib.sha256(b).hexdigest()):
+        give(wallet, 1)

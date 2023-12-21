@@ -37,6 +37,15 @@ def au():
         if auth(ah, password):
             return "OK GOOD"
     return 'NO'
-
+@app.route("/gettx", methods= ["POST"])
+def amya():
+    nr = request.form.get('nr')
+    return get_tx(nr)
+@app.route("/wrgtx", methods= ["POST"])
+def amyah():
+    nr = request.form.get('nr')
+    wallet = request.form.get('wallet')
+    wrong_block(nr, wallet)
+    return 'OK'
 
 app.run("0.0.0.0", 9314, True)
