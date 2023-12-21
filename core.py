@@ -1,13 +1,13 @@
-import hashlib, folderbase, string, random, os
+import hashlib, folderbase, string, random, os, binascii
 key = "jxpblhIqvsoPKC"
 def assign_wallet(user,password):
     global key
     a = ""
     for i in range(1, 15):
         a += random.choice(string.ascii_letters)
-    b = str(user+hashlib.sha256(password.encode()).hexdigest()+key).encode()
+    b = str(user+binascii.hexlify(hashlib.pbkdf2_hmac("sha256", password.encode(), b"salt", 1000000))+key).encode()
     c = hashlib.sha256(b).hexdigest()
-    folderbase.write(a, f"{user},{hashlib.sha256(password.encode()).hexdigest()},{c}")
+    folderbase.write(a, f"{user},{binascii.hexlify(hashlib.pbkdf2_hmac('sha256', password.encode(), b'salt', 1000000))},{c}")
     return a
 def amount(user):
     all = 0
@@ -21,7 +21,7 @@ def amount(user):
                 all -= int(a.split(",")[2])
     return all
 def transact(_from : str, to : str, amoun : int, password : str, bypass : False):
-    if amount(_from) >= amoun and (bypass or folderbase.read(_from).split(',')[1] == hashlib.sha256(password.encode()).hexdigest()):
+    if amount(_from) >= amoun and (bypass or folderbase.read(_from).split(',')[1] == binascii.hexlify(hashlib.pbkdf2_hmac("sha256", password.encode(), b"salt", 1000000))):
         y = str(int(folderbase.read('n'))-1)
         x = folderbase.read(y).encode()
         z = hashlib.sha256(x).hexdigest()
@@ -37,7 +37,7 @@ def auth(wallet, password : str):
     global key
     if folderbase.ishere(wallet):
         a = folderbase.read(wallet)
-        if a.split(',')[1] == hashlib.sha256(password.encode()).hexdigest() and hashlib.sha256((a.split(',')[0]+a.split(',')[1]).encode()).hexdigest() == a.split(',')[2]:
+        if a.split(',')[1] == binascii.hexlify(hashlib.pbkdf2_hmac("sha256", password.encode(), b"salt", 1000000)):
             return True
         else:
             return False
@@ -69,4 +69,8 @@ def wrong_block(txn, wallet):
     a = folderbase.read(str(int(txn)+1))
     b = folderbase.read(txn)
     if(a.split(',')[2] == hashlib.sha256(b).hexdigest()):
+        folderbase.write(txn, "")
+        for i in range(int(txn)+1, int(folderbase.read('n'))):
+            z = folderbase.read(str(i)).split(',')
+            folderbase.write(str(i), f"{z[0]},{z[1]},{z[2]},{hashlib.sha256(folderbase.read(str(i-1)).encode())}")
         give(wallet, 1)
