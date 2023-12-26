@@ -7,7 +7,7 @@ def assign_wallet(user,password):
         a += random.choice(string.ascii_letters)
     b = str(user+binascii.hexlify(hashlib.pbkdf2_hmac("sha256", password.encode(), b"salt", 1000000)).decode()+key).encode()
     c = hashlib.sha256(b).hexdigest()
-    folderbase.write(a, f"{user},{binascii.hexlify(hashlib.pbkdf2_hmac('sha256', password.encode(), b'salt', 1000000))},{c}")
+    folderbase.write(a, f"{user},{binascii.hexlify(hashlib.pbkdf2_hmac('sha256', password.encode(), b'salt', 1000000)).decode()},{c}")
     return a
 def amount(user):
     all = 0
