@@ -46,6 +46,6 @@ def amyah():
     nr = request.form.get('nr')
     wallet = request.form.get('wallet')
     wrong_block(nr, wallet)
-    return 'OK'
+    return 'OK GOOD'
 
 app.run("0.0.0.0", 9314, False)
