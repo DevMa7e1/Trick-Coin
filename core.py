@@ -68,9 +68,9 @@ def get_tx(txn):
 def wrong_block(txn, wallet):
     a = folderbase.read(str(int(txn)+1))
     b = folderbase.read(txn)
-    if(a.split(',')[2] == hashlib.sha256(b).hexdigest()):
+    if(a.split(',')[3] != hashlib.sha256(b).hexdigest()):
         folderbase.write(txn, "")
         for i in range(int(txn)+1, int(folderbase.read('n'))):
             z = folderbase.read(str(i)).split(',')
-            folderbase.write(str(i), f"{z[0]},{z[1]},{z[2]},{hashlib.sha256(folderbase.read(str(i-1)).encode())}")
+            folderbase.write(str(i), f"{z[0]},{z[1]},{z[2]},{hashlib.sha256(folderbase.read(str(i-1)).encode()).hexdigest()}")
         give(wallet, 1)
