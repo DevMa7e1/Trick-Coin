@@ -1,4 +1,5 @@
 from core import *
+from faucet import drop
 from flask import Flask, request
 import hashlib, binascii
 app = Flask(__name__)
@@ -47,5 +48,9 @@ def amyah():
     wallet = request.form.get('wallet')
     wrong_block(nr, wallet)
     return 'OK GOOD'
+@app.route("/faucet", methods= ["POST"])
+def amya():
+    wallet = request.form.get('wallet')
+    return drop(wallet)
 
 app.run("0.0.0.0", 9314, False)
