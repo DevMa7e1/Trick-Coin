@@ -49,7 +49,7 @@ def amyah():
     wrong_block(nr, wallet)
     return 'OK GOOD'
 @app.route("/faucet", methods= ["POST"])
-def amya():
+def faucet():
     wallet = request.form.get('wallet')
     return drop(wallet)
 
