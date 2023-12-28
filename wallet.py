@@ -39,7 +39,7 @@ else:
             #Start wallet code here!
             while(True):
                 print(f"{colorama.Fore.BLUE}"+requests.post(ip+"/amount", data={"user": a[0]}).text, "TRICK", f"{colorama.Fore.RESET}")
-                opt = input(f"{colorama.Fore.RED}1. Send{colorama.Fore.GREEN} \n2. Recive{colorama.Fore.RESET}\nOption number>")
+                opt = input(f"{colorama.Fore.RED}1. Send{colorama.Fore.GREEN} \n2. Recive\n{colorama.Fore.CYAN}3. Hourly reward{colorama.Fore.RESET}\nOption number>")
                 if(opt == "1"):
                     amount = input("Amount>")
                     to = input("Recipient wallet>")
@@ -49,6 +49,11 @@ else:
                         print(f"{colorama.Fore.RED}Transaction unsuccsessful!{colorama.Fore.RESET}")
                 elif(opt == "2"):
                     print(a[0])
+                elif(opt == "3"):
+                    if 'OK GOOD' in requests.post(ip+"/faucet", data={'wallet': a[0]}).text:
+                        print(f"{colorama.Fore.GREEN}Hourly reward has been claimed.{colorama.Fore.RESET}")
+                    else:
+                        print(f'{colorama.Fore.RED}Hourly reward has not been claimed. Come an hour later!')
     else:
             print(f"{colorama.Fore.RED}You have not been succesfully logged in!{colorama.Fore.RESET}")
 input()
