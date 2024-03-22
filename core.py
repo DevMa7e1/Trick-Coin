@@ -37,7 +37,7 @@ def auth(wallet, password : str):
     global key
     if folderbase.ishere(wallet):
         a = folderbase.read(wallet)
-        if a.split(',')[1] == binascii.hexlify(hashlib.pbkdf2_hmac("sha256", password.encode(), b"salt", 1000000)):
+        if a.split(',')[1] == binascii.hexlify(hashlib.pbkdf2_hmac("sha256", password.encode(), b"salt", 1000000)).decode():
             return True
         else:
             return False
