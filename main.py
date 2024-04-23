@@ -52,5 +52,9 @@ def amyah():
 def faucet():
     wallet = request.form.get('wallet')
     return drop(wallet)
+@app.route("/txs", methods= ["POST"])
+def txs():
+    wallet = request.form.get('wallet')
+    return t_amount(wallet)
 
 app.run("0.0.0.0", 9314, False)

@@ -20,12 +20,18 @@ def amount(user):
             if a.split(',')[1] == user:
                 all -= int(a.split(",")[2])
     return all
+def t_amount(user : str):
+    return folderbase.read(user+"_txs")
 def transact(_from : str, to : str, amoun : int, password : str, bypass : False):
     if amount(_from) >= amoun and (bypass or folderbase.read(_from).split(',')[1] == binascii.hexlify(hashlib.pbkdf2_hmac("sha256", password.encode(), b"salt", 1000000))):
         y = str(int(folderbase.read('n'))-1)
         x = folderbase.read(y).encode()
         z = hashlib.sha256(x).hexdigest()
         folderbase.write(folderbase.read("n"), f"{to},{_from},{str(amoun)},{z}")
+        if folderbase.ishere(to+"_txs"):
+            folderbase.write(to+"_txs", str(int(folderbase.read(to+"_txs"))+1))
+        else:
+            folderbase.write(to+"_txs", '1')
         folderbase.write("n", int(folderbase.read("n"))+1)
 def give(to : str, amoun : int):
     y = str(int(folderbase.read('n'))-1)
@@ -33,6 +39,10 @@ def give(to : str, amoun : int):
     z = hashlib.sha256(x).hexdigest()
     folderbase.write(folderbase.read("n"), f"{to},god,{str(amoun)},{z}")
     folderbase.write("n", int(folderbase.read("n"))+1)
+    if folderbase.ishere(to+"_txs"):
+        folderbase.write(to+"_txs", str(int(folderbase.read(to+"_txs"))+1))
+    else:
+        folderbase.write(to+"_txs", '1')
 def auth(wallet, password : str):
     global key
     if folderbase.ishere(wallet):
@@ -43,23 +53,6 @@ def auth(wallet, password : str):
             return False
     else:
         return False
-def verify(tx : int, user : str):
-    #OBSOLETE!!! DO NOT USE!!!
-    for i in range(tx, int(folderbase.read('n'))):
-        if not folderbase.read(str(i)).split(',')[2] == hashlib.sha256(folderbase.read(str(i-1)).encode()).hexdigest():
-            print(f"Wrong block detected! {i - 1}")
-            a = folderbase.read(str(i - 1)).split(',')
-            if a[2] < 1:
-                transact(a[0], user, int(a[2]), "", True)
-            elif a[2] > 10 and a[2] < 100:
-                transact(a[0], user, int(a[2]) / 2, True)
-            elif a[2] > 100:
-                transact(a[0], user, 100, "", True)
-            folderbase.delete(str(i - 1))
-        else:
-            z = int(folderbase.read('n'))
-            give(user, z-(z - tx))
-    folderbase.write('v', folderbase.read('n'))
 def get_tx(txn):
     if folderbase.ishere(txn):
         a = folderbase.read(txn)
@@ -68,7 +61,7 @@ def get_tx(txn):
 def wrong_block(txn, wallet):
     a = folderbase.read(str(int(txn)+1))
     b = folderbase.read(txn)
-    if(a.split(',')[3] != hashlib.sha256(b).hexdigest()):
+    if(a.split(',')[3] != hashlib.sha256(b.encode()).hexdigest()):
         folderbase.write(txn, "")
         for i in range(int(txn)+1, int(folderbase.read('n'))):
             z = folderbase.read(str(i)).split(',')
