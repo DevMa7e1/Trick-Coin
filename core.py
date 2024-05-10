@@ -1,9 +1,9 @@
-import hashlib, folderbase, os, binascii, boss
+import hashlib, folderbase, os, binascii, boss, html
 
 # Trick Coin V2
 
 def assign_wallet(user,password):
-    a = user
+    a = html.escape(user)
     if folderbase.ishere(user):
         return 'User already exists.'
     folderbase.write(a, f" ,{binascii.hexlify(hashlib.pbkdf2_hmac('sha256', (boss.get_password(password)).encode(), b'salt', 1000000)).decode()}")
@@ -22,6 +22,8 @@ def amount(user):
 def t_amount(user : str):
     return folderbase.read(user+"_txs")
 def transact(_from : str, to : str, amoun : int, password : str, bypass = False):
+    _from = html.escape(_from)
+    to = html.escape(to)
     if binascii.hexlify(hashlib.pbkdf2_hmac("sha256", password.encode(), b"salt", 1000000)) == folderbase.read(_from).split(',')[1]:
         ()
     elif not amount(_from) >= amoun:
@@ -49,6 +51,7 @@ def give(to : str, amoun : int):
     else:
         folderbase.write(to+"_txs", '1')
 def auth(wallet, password : str):
+    wallet = html.escape(wallet)
     if folderbase.ishere(wallet):
         a = folderbase.read(wallet)
         if a.split(',')[1] == binascii.hexlify(hashlib.pbkdf2_hmac("sha256", boss.get_password(password).encode(), b"salt", 1000000)).decode():

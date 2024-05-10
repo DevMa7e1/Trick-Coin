@@ -15,7 +15,6 @@ def new():
 @app.route("/transact", methods = ['POST'])
 def tr():
     data = boss.get_password(str(request.form.get('data', False)))
-    print(data.encode())
     data = data.split(',')
     _from = data[0]
     to = data[1]
