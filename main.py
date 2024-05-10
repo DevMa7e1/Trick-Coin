@@ -1,7 +1,7 @@
 from core import *
 from faucet import drop
 from flask import Flask, request
-import hashlib, binascii
+import hashlib, binascii, boss
 app = Flask(__name__)
 
 @app.route("/")
@@ -14,15 +14,15 @@ def new():
     return str(assign_wallet(user, password))
 @app.route("/transact", methods = ['POST'])
 def tr():
-    _from = str(request.form['from'])
-    to = str(request.form.get('to', False))
-    amoun = str(request.form.get('amount', False))
-    password = str(request.form.get('password', False))
-    if int(amount(_from)) >= int(amoun) and binascii.hexlify(hashlib.pbkdf2_hmac("sha256", password.encode(), b"salt", 1000000)) == folderbase.read(_from).split(',')[1]:
-        transact(_from, to, int(amoun), password, bypass=False)
-        return "OK GOOD"
-    else:
-        return 'NO'
+    data = boss.get_password(str(request.form.get('data', False)))
+    print(data.encode())
+    data = data.split(',')
+    _from = data[0]
+    to = data[1]
+    amoun = data[2]
+    password = data[3]
+    transact(_from, to, int(amoun), password)
+    return "OK GOOD"
 @app.route("/amount", methods= ["POST"])
 def am():
     user = request.form['user']
@@ -56,5 +56,7 @@ def faucet():
 def txs():
     wallet = request.form.get('wallet')
     return t_amount(wallet)
-
+@app.route('/getkey')
+def getkey():
+    return boss.get_public_key()
 app.run("0.0.0.0", 9314, False)

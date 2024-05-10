@@ -1,13 +1,12 @@
-import hashlib, folderbase, string, random, os, binascii
-key = "jxpblhIqvsoPKC"
+import hashlib, folderbase, os, binascii, boss
+
+# Trick Coin V2
+
 def assign_wallet(user,password):
-    global key
-    a = ""
-    for i in range(1, 15):
-        a += random.choice(string.ascii_letters)
-    b = str(user+binascii.hexlify(hashlib.pbkdf2_hmac("sha256", password.encode(), b"salt", 1000000)).decode()+key).encode()
-    c = hashlib.sha256(b).hexdigest()
-    folderbase.write(a, f"{user},{binascii.hexlify(hashlib.pbkdf2_hmac('sha256', password.encode(), b'salt', 1000000)).decode()},{c}")
+    a = user
+    if folderbase.ishere(user):
+        return 'User already exists.'
+    folderbase.write(a, f" ,{binascii.hexlify(hashlib.pbkdf2_hmac('sha256', (boss.get_password(password)).encode(), b'salt', 1000000)).decode()}")
     return a
 def amount(user):
     all = 0
@@ -22,8 +21,14 @@ def amount(user):
     return all
 def t_amount(user : str):
     return folderbase.read(user+"_txs")
-def transact(_from : str, to : str, amoun : int, password : str, bypass : False):
-    if amount(_from) >= amoun and (bypass or folderbase.read(_from).split(',')[1] == binascii.hexlify(hashlib.pbkdf2_hmac("sha256", password.encode(), b"salt", 1000000))):
+def transact(_from : str, to : str, amoun : int, password : str, bypass = False):
+    if binascii.hexlify(hashlib.pbkdf2_hmac("sha256", password.encode(), b"salt", 1000000)) == folderbase.read(_from).split(',')[1]:
+        ()
+    elif not amount(_from) >= amoun:
+        ()
+    elif not folderbase.ishere(to):
+        ()
+    else:
         y = str(int(folderbase.read('n'))-1)
         x = folderbase.read(y).encode()
         z = hashlib.sha256(x).hexdigest()
@@ -44,10 +49,9 @@ def give(to : str, amoun : int):
     else:
         folderbase.write(to+"_txs", '1')
 def auth(wallet, password : str):
-    global key
     if folderbase.ishere(wallet):
         a = folderbase.read(wallet)
-        if a.split(',')[1] == binascii.hexlify(hashlib.pbkdf2_hmac("sha256", password.encode(), b"salt", 1000000)).decode():
+        if a.split(',')[1] == binascii.hexlify(hashlib.pbkdf2_hmac("sha256", boss.get_password(password).encode(), b"salt", 1000000)).decode():
             return True
         else:
             return False
