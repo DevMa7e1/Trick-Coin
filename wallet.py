@@ -36,7 +36,7 @@ if(not os.path.exists("setup")):
 else:
     f = open("setup")
     a = f.read().split(',')
-    if("OK GOOD" in requests.post(ip+"/auth", data={"user": a[0], "password":rsa.encrypt(a[1].encode(), publickey).decode()}).text):
+    if("OK GOOD" in requests.post(ip+"/auth", data={"user": a[0], "password":rsa.encrypt(a[1].encode(), publickey).decode('Latin-1')}).text):
             print(f"{colorama.Fore.GREEN}You have been succesfully logged in!{colorama.Fore.RESET}")
             while(True):
                 print(f"{colorama.Fore.BLUE}"+requests.post(ip+"/amount", data={"user": a[0]}).text, "TRICK", f"{colorama.Fore.RESET}")
