@@ -58,4 +58,20 @@ def txs():
 @app.route('/getkey')
 def getkey():
     return boss.get_public_key()
+@app.route('/mkcf', methods=['POST']) #make coin file
+def mkcf():
+    data = boss.get_password(str(request.form.get('data', False)))
+    data = data.split(',')
+    _from = data[0]
+    amoun = data[1]
+    password = data[2]
+    return transfer_coins_to_file(amoun, _from, password)
+@app.route('/gcfc', methods=['POST']) #get coin-file coins
+def gcfc():
+    data = boss.get_password(str(request.form.get('data', False)))
+    file_password = boss.get_password(str(request.form.get('fp', False)))
+    data = data.split(',')
+    wallet = data[0]
+    password = data[1]
+    return convert_file_to_coins(wallet, password, file_password)
 app.run("0.0.0.0", 9314, False)

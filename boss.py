@@ -1,5 +1,4 @@
 import rsa, os.path
-from Crypto.Cipher import AES
 
 if not os.path.exists('pub.rsa-key'):
     (publickey, privatekey) = rsa.newkeys(2048)
@@ -20,6 +19,6 @@ pri.close()
 pub.close()
 
 def get_password(got : str):
-    return rsa.decrypt(got.encode('Latin-1'), privatekey).decode()
+    return rsa.decrypt(got.encode('Latin-1'), privatekey).decode('Latin-1')
 def get_public_key():
     return public_plain_text

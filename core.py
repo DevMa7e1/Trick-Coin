@@ -1,4 +1,4 @@
-import hashlib, folderbase, os, binascii, boss, html
+import hashlib, folderbase, os, binascii, boss, html, random, string
 
 # Trick Coin V2
 
@@ -50,14 +50,30 @@ def give(to : str, amoun : int):
         folderbase.write(to+"_txs", str(int(folderbase.read(to+"_txs"))+1))
     else:
         folderbase.write(to+"_txs", '1')
-def auth(wallet, password : str):
+def take(_from : str, amoun : int):
+    if amount(_from) >= amoun:
+        y = str(int(folderbase.read('n'))-1)
+        x = folderbase.read(y).encode()
+        z = hashlib.sha256(x).hexdigest()
+        folderbase.write(folderbase.read("n"), f"god,{_from},{str(amoun)},{z}")
+        folderbase.write("n", int(folderbase.read("n"))+1)
+        return True
+    else:
+        return False
+def auth(wallet, password : str, decrypt = True):
     wallet = html.escape(wallet)
     if folderbase.ishere(wallet):
         a = folderbase.read(wallet)
-        if a.split(',')[1] == binascii.hexlify(hashlib.pbkdf2_hmac("sha256", boss.get_password(password).encode(), b"salt", 1000000)).decode():
-            return True
+        if decrypt:
+            if a.split(',')[1] == binascii.hexlify(hashlib.pbkdf2_hmac("sha256", boss.get_password(password).encode(), b"salt", 1000000)).decode():
+                return True
+            else:
+                return False
         else:
-            return False
+            if a.split(',')[1] == binascii.hexlify(hashlib.pbkdf2_hmac("sha256", password.encode(), b"salt", 1000000)).decode():
+                return True
+            else:
+                return False
     else:
         return False
 def get_tx(txn):
@@ -74,3 +90,23 @@ def wrong_block(txn, wallet):
             z = folderbase.read(str(i)).split(',')
             folderbase.write(str(i), f"{z[0]},{z[1]},{z[2]},{hashlib.sha256(folderbase.read(str(i-1)).encode()).hexdigest()}")
         give(wallet, 1)
+def transfer_coins_to_file(amoun, wallet, passwd):
+    if binascii.hexlify(hashlib.pbkdf2_hmac("sha256", passwd.encode(), b"salt", 1000000)).decode() == folderbase.read(wallet).split(',')[1]:
+        password = ''
+        for i in range(20):
+            password += random.choice(string.ascii_letters)
+        if take(wallet, int(amoun)):
+            folderbase.write(binascii.hexlify(hashlib.pbkdf2_hmac("sha256", password.encode(), b"salt", 1000000)).decode(), amoun)
+        return f'{amoun},{password}'
+    else:
+        return 'NO'
+def convert_file_to_coins(wallet, password, file_password : str):
+    if folderbase.ishere(binascii.hexlify(hashlib.pbkdf2_hmac("sha256", file_password.encode(), b"salt", 1000000)).decode()):
+        if auth(wallet, password, False):
+            give(wallet, folderbase.read(binascii.hexlify(hashlib.pbkdf2_hmac("sha256", file_password.encode(), b"salt", 1000000)).decode()))
+            folderbase.delete(binascii.hexlify(hashlib.pbkdf2_hmac("sha256", file_password.encode(), b"salt", 1000000)).decode())
+            return 'Coins recovered succesfully!'
+        else:
+            return 'Wrong password!'
+    else:
+        return 'Coin file is invalid!'
