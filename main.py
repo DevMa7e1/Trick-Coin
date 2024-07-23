@@ -1,7 +1,6 @@
 from core import *
-from faucet import drop
 from flask import Flask, request
-import hashlib, binascii, boss
+import boss
 app = Flask(__name__)
 
 @app.route("/")
@@ -20,8 +19,9 @@ def tr():
     to = data[1]
     amoun = data[2]
     password = data[3]
-    transact(_from, to, int(amoun), password)
-    return "OK GOOD"
+    if transact(_from, to, int(amoun), password):
+        return "OK GOOD"
+    return 'NO'
 @app.route("/amount", methods= ["POST"])
 def am():
     user = request.form['user']
@@ -41,37 +41,25 @@ def au():
 def amya():
     nr = request.form.get('nr')
     return get_tx(nr)
-@app.route("/wrgtx", methods= ["POST"])
-def amyah():
-    nr = request.form.get('nr')
-    wallet = request.form.get('wallet')
-    wrong_block(nr, wallet)
-    return 'OK GOOD'
-@app.route("/faucet", methods= ["POST"])
-def faucet():
-    wallet = request.form.get('wallet')
-    return drop(wallet)
 @app.route("/txs", methods= ["POST"])
 def txs():
     wallet = request.form.get('wallet')
-    return t_amount(wallet)
+    if t_amount(wallet):
+        return 'OK GOOD'
+    return 'NO'
 @app.route('/getkey')
 def getkey():
     return boss.get_public_key()
-@app.route('/mkcf', methods=['POST']) #make coin file
-def mkcf():
-    data = boss.get_password(str(request.form.get('data', False)))
-    data = data.split(',')
-    _from = data[0]
-    amoun = data[1]
-    password = data[2]
-    return transfer_coins_to_file(amoun, _from, password)
-@app.route('/gcfc', methods=['POST']) #get coin-file coins
-def gcfc():
-    data = boss.get_password(str(request.form.get('data', False)))
-    file_password = boss.get_password(str(request.form.get('fp', False)))
-    data = data.split(',')
-    wallet = data[0]
-    password = data[1]
-    return convert_file_to_coins(wallet, password, file_password)
+@app.route('/getunv', methods = ['POST'])
+def getunv():
+    return get_one_unvalidated_transaction(request.form.get('wallet'))
+@app.route('/validate', methods=['POST'])
+def validate():
+    hash = boss.get_password(str(request.form.get('hash', False)))
+    hash2 = boss.get_password(str(request.form.get('hash2', False)))
+    wallet = boss.get_password(str(request.form.get('wallet', False)))
+    signature = request.form.get('sig')
+    public_key = request.form.get('pub')
+    signature2 = request.form.get('sig2')
+    return got_signature_from_miner(signature, public_key, hash, wallet, signature2, hash2)
 app.run("0.0.0.0", 9314, False)

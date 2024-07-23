@@ -22,3 +22,11 @@ def get_password(got : str):
     return rsa.decrypt(got.encode('Latin-1'), privatekey).decode('Latin-1')
 def get_public_key():
     return public_plain_text
+def verify(signature : str, message : str, public_key : str):
+    if len(public_key) == 775:
+        try:
+            rsa.verify(message.encode(), bytes.fromhex(signature), rsa.PublicKey.load_pkcs1(public_key.encode()))
+            return True
+        except:
+            return False
+    return False

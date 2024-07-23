@@ -1,4 +1,4 @@
-import colorama, requests, os.path, rsa, hashlib, binascii
+import colorama, requests, os.path, rsa, time
 print(f"""{colorama.Fore.RED}
   OOOOO OOOO  O  OOOO  O O        O       O   OOO   O    O    OOOO OOOOO
     O   O  O  O  O     OO         O   O   O  O   O  O    O    OOO    O
@@ -12,31 +12,10 @@ r = requests.get("https://devma7e1.pythonanywhere.com/ip")
 if r.status_code == 200:
     print(f"{colorama.Fore.GREEN}Ip has been found!{colorama.Fore.RESET}")
     ip = r.text
+if os.path.exists('DevMode.activate'):
+    print("Developer mode active!")
+    ip = 'http://localhost:9314'
 publickey = rsa.PublicKey.load_pkcs1(requests.get(ip+'/getkey').text.encode())
-def get_the_magic_string(god_awful_string):
-    r = god_awful_string
-    a  = ''
-    dick = {}
-    for i in range(len(r)):
-        if r[i].isupper():
-            dick.update({i : r[i]})
-        else:
-            a += r[i]
-    b = bytes.fromhex(a.replace('\\x', '').replace("'", '').removeprefix('b'))
-    c = b''
-    i = -1
-    while True:
-        i += 1
-        if i >= len(b)+len(dick)-1:
-            break
-        if i in dick:
-            c += dick[i].encode()
-            i -= 1
-            c += str(chr(b[i])).encode('Latin-1')
-            i += 1
-        else:
-            c += str(chr(b[i])).encode('Latin-1')
-    return c
 if(not os.path.exists("setup")):
     if(input("Do you already have a wallet? Y/n>").lower() == "n"):
         user = input("Username>")
@@ -64,65 +43,41 @@ else:
             print(f"{colorama.Fore.GREEN}You have been succesfully logged in!{colorama.Fore.RESET}")
             while(True):
                 print(f"{colorama.Fore.BLUE}"+requests.post(ip+"/amount", data={"user": a[0]}).text, "TRICK", f"{colorama.Fore.RESET}")
-                opt = input(f"{colorama.Fore.RED}1. Send{colorama.Fore.GREEN} \n2. Recive\n{colorama.Fore.CYAN}3. Hourly reward{colorama.Fore.RESET}\n{colorama.Fore.MAGENTA}4. Turn coins into file{colorama.Fore.YELLOW}\n5. Turn file into coins\n{colorama.Fore.RESET}Option number>")
+                opt = input(f"{colorama.Fore.RED}1. Send{colorama.Fore.GREEN} \n2. Recive\n{colorama.Fore.CYAN}3. Start mining\n{colorama.Fore.RESET}Option number>")
                 if(opt == "1"):
+                    if 'OK GOOD' in requests.post(ip+"/txs", data={'wallet' : a[0]}).text:
+                        print(f'{colorama.Fore.RED}You still have unverified transactions! Hang on tight while somebody validates you transactions.{colorama.Fore.RESET}')
+                        break
+                    print(f"{colorama.Fore.YELLOW}A tax of 1 TRICK is applied to every transaction.\nIf the transaction looks like it didn't go through, wait 24h before reporting the problem.{colorama.Fore.RESET}")
                     amount = input("Amount>")
+                    while int(amount)+1 > int(requests.post(ip+"/amount", data={"user": a[0]}).text):
+                        print(f"{colorama.Fore.RED}You do not have enough coins for this transaction.{colorama.Fore.YELLOW}\nRemember, the 1 TRICK tax is taken into account.{colorama.Fore.RESET}")
+                        amount = input("Amount>")
                     to = input("Recipient user>")
-                    if("OK GOOD" in requests.post(ip+"/transact", data={"data" : rsa.encrypt(f'{a[0]},{to},{amount},{a[1]}'.encode(), publickey).decode('Latin-1')}).text):
-                        print(f"{colorama.Fore.GREEN}Transaction succsessful!{colorama.Fore.RESET}")
+                    sure = input(f"Total: {str(int(amount)+1)}. Are you sure you want to continue? Y/n>").upper()
+                    if sure == 'Y':
+                        if("OK GOOD" in requests.post(ip+"/transact", data={"data" : rsa.encrypt(f'{a[0]},{to},{amount},{a[1]}'.encode(), publickey).decode('Latin-1')}).text):
+                            print(f"{colorama.Fore.GREEN}Transaction sent to validation!{colorama.Fore.RESET}")
+                        else:
+                            print(f"{colorama.Fore.RED}Transaction was unsuccsessful!{colorama.Fore.RESET}")
                     else:
-                        print(f"{colorama.Fore.RED}Transaction unsuccsessful!{colorama.Fore.RESET}")
+                        print(f'{colorama.Fore.YELLOW}Transaction aborted{colorama.Fore.RESET}')
                 elif(opt == "2"):
                     print(a[0])
                 elif(opt == "3"):
-                    if 'OK GOOD' in requests.post(ip+"/faucet", data={'wallet': a[0]}).text:
-                        print(f"{colorama.Fore.GREEN}Hourly reward has been claimed.{colorama.Fore.RESET}")
-                    else:
-                        print(f'{colorama.Fore.RED}Hourly reward has not been claimed. Come an hour later!')
-                elif(opt == "4"):
-                    amount = input('Amount>')
-                    req = requests.post(ip+"/mkcf", data={'data': rsa.encrypt(f'{a[0]},{amount},{a[1]}'.encode('Latin-1'), publickey).decode('Latin-1')})
-                    if not ('NO' in req.text):
-                        file = input('Path for file to create>')
-                        if not file.endswith('.trick'):
-                            file += '.trick'
-                        try:
-                            f = open(file, 'w')
-                            f.write(req.text)
-                            f.close()
-                        except Exception as e:
-                            print(e)
-                            print('Try again.')
-                        while not os.path.exists(file):
-                            file = input('File did not create! Maybe the path is wrong.\nPath for file to create>')
-                            if not file.endswith('.trick'):
-                                file += '.trick'
-                            try:
-                                f = open(file, 'w')
-                                f.write(req.text)
-                                f.close()
-                            except Exception as e:
-                                print(e)
-                                print('Try again.')
-                elif(opt == "5"):
-                    print('Tip: You can drag and drop files into the terminal to get their path.\n')
-                    file = input('Path to file>')
-                    while not os.path.exists(file):
-                        file = input('File does not exist.\nPath to file>')
-                    f = open(file, 'r')
-                    read = f.read()
-                    read = read.split(',', 1)
-                    by = read[1]
-                    print(f'You are reciving {read[0]} TRICK.')
-                    try:
-                        input("Are you sure that you want to recive those coins?\nPress enter to proceed or hit Ctrl+C to cancel.")
-                        print(requests.post(ip+"/gcfc", data={'data': rsa.encrypt(f'{a[0]},{a[1]}'.encode('Latin-1'), publickey).decode('Latin-1'), 'fp': rsa.encrypt(by.encode(), publickey).decode('Latin-1')}).text)
-                    except Exception as e:
-                        print(f'{colorama.Fore.RED}Transaction stopped.{colorama.Fore.RESET}')
-                        if input('Press enter to continue.') == 'error':
-                            print(e)
-                    except KeyboardInterrupt:
-                        print(f'{colorama.Fore.RED}Transaction stopped.{colorama.Fore.RESET}')
+                    while True:
+                        print('Waiting for task.')
+                        tx = requests.post(ip+"/getunv", data={'wallet' : a[0]})
+                        if tx.text != 'NO' and tx.status_code == 200:
+                            print('Recived new task!')
+                            starttime = time.time()
+                            pub, pri = rsa.newkeys(4096)
+                            stoptime = time.time()
+                            print('Mining rate:', 1/((stoptime-starttime)/60), 'cert/min')
+                            signature = rsa.sign(tx.text.split(',')[0].encode(), pri, 'SHA-256')
+                            hash = rsa.encrypt(tx.text.split(',')[0].encode(), publickey).decode('Latin-1')
+                            signature2 = rsa.sign(tx.text.split(',')[1].encode(), pri, 'SHA-256').hex()
+                            print(requests.post(ip+"/validate", data= {'wallet' : rsa.encrypt(f'{a[0]}'.encode(), publickey).decode('Latin-1'), "sig" : signature.hex(), "pub": pub.save_pkcs1().decode(), 'hash' : hash, 'sig2' : signature2, 'hash2' : rsa.encrypt(tx.text.split(',')[1].encode(), publickey).decode('Latin-1')}).text)
     else:
             print(f"{colorama.Fore.RED}You have not been succesfully logged in!{colorama.Fore.RESET}")
 input('Press enter to exit.')

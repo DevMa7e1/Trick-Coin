@@ -3,3 +3,4 @@ folderbase/
 *.test
 __pycache__/
 setup
+*.activate

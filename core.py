@@ -1,6 +1,6 @@
-import hashlib, folderbase, os, binascii, boss, html, random, string
+import hashlib, folderbase, os, binascii, boss, html
 
-# Trick Coin V2
+# Trick Coin V2.1
 
 def assign_wallet(user,password):
     a = html.escape(user)
@@ -13,53 +13,30 @@ def amount(user):
     for i in os.listdir(os.getcwd()+"/folderbase"):
         f = open('folderbase/'+i)
         a = f.read()
-        if len(a.split(',')) > 1:
+        if len(a.split(',')) > 1 and not i.startswith('u.'):
             if a.split(',')[0] == user:
                 all += int(a.split(",")[2])
             if a.split(',')[1] == user:
                 all -= int(a.split(",")[2])
     return all
 def t_amount(user : str):
-    return folderbase.read(user+"_txs")
-def transact(_from : str, to : str, amoun : int, password : str, bypass = False):
+    if folderbase.ishere(user+"_txs"):
+        return True
+    return False
+def transact(_from : str, to : str, amoun : int, password : str = '', bypass = False):
     _from = html.escape(_from)
     to = html.escape(to)
-    if binascii.hexlify(hashlib.pbkdf2_hmac("sha256", password.encode(), b"salt", 1000000)) == folderbase.read(_from).split(',')[1]:
-        ()
-    elif not amount(_from) >= amoun:
-        ()
-    elif not folderbase.ishere(to):
-        ()
-    else:
-        y = str(int(folderbase.read('n'))-1)
-        x = folderbase.read(y).encode()
-        z = hashlib.sha256(x).hexdigest()
-        folderbase.write(folderbase.read("n"), f"{to},{_from},{str(amoun)},{z}")
-        if folderbase.ishere(to+"_txs"):
-            folderbase.write(to+"_txs", str(int(folderbase.read(to+"_txs"))+1))
-        else:
-            folderbase.write(to+"_txs", '1')
-        folderbase.write("n", int(folderbase.read("n"))+1)
+    if not folderbase.ishere(_from+"_txs"):
+        if (binascii.hexlify(hashlib.pbkdf2_hmac("sha256", password.encode(), b"salt", 1000000)).decode() == folderbase.read(_from).split(',')[1] or bypass) and amount(_from) >= amoun+1 and folderbase.ishere(to):
+            z = hashlib.md5(f"{to},{_from},{str(amoun)}".encode()).hexdigest()
+            folderbase.write('u.'+z, f"{to},{_from},{str(amoun)}")
+            folderbase.write(_from+"_txs", '')
+            return True
+    return False
 def give(to : str, amoun : int):
-    y = str(int(folderbase.read('n'))-1)
-    x = folderbase.read(y).encode()
-    z = hashlib.sha256(x).hexdigest()
-    folderbase.write(folderbase.read("n"), f"{to},god,{str(amoun)},{z}")
-    folderbase.write("n", int(folderbase.read("n"))+1)
-    if folderbase.ishere(to+"_txs"):
-        folderbase.write(to+"_txs", str(int(folderbase.read(to+"_txs"))+1))
-    else:
-        folderbase.write(to+"_txs", '1')
+    transact('god', to, amoun, bypass=True)
 def take(_from : str, amoun : int):
-    if amount(_from) >= amoun:
-        y = str(int(folderbase.read('n'))-1)
-        x = folderbase.read(y).encode()
-        z = hashlib.sha256(x).hexdigest()
-        folderbase.write(folderbase.read("n"), f"god,{_from},{str(amoun)},{z}")
-        folderbase.write("n", int(folderbase.read("n"))+1)
-        return True
-    else:
-        return False
+    return transact(_from, 'god', amoun, bypass=True)    
 def auth(wallet, password : str, decrypt = True):
     wallet = html.escape(wallet)
     if folderbase.ishere(wallet):
@@ -77,36 +54,34 @@ def auth(wallet, password : str, decrypt = True):
     else:
         return False
 def get_tx(txn):
+    txn = html.escape(txn)
     if folderbase.ishere(txn):
         a = folderbase.read(txn)
         return a
     return "NO"
-def wrong_block(txn, wallet):
-    a = folderbase.read(str(int(txn)+1))
-    b = folderbase.read(txn)
-    if(a.split(',')[3] != hashlib.sha256(b.encode()).hexdigest()):
-        folderbase.write(txn, "")
-        for i in range(int(txn)+1, int(folderbase.read('n'))):
-            z = folderbase.read(str(i)).split(',')
-            folderbase.write(str(i), f"{z[0]},{z[1]},{z[2]},{hashlib.sha256(folderbase.read(str(i-1)).encode()).hexdigest()}")
-        give(wallet, 1)
-def transfer_coins_to_file(amoun, wallet, passwd):
-    if binascii.hexlify(hashlib.pbkdf2_hmac("sha256", passwd.encode(), b"salt", 1000000)).decode() == folderbase.read(wallet).split(',')[1]:
-        password = ''
-        for i in range(20):
-            password += random.choice(string.ascii_letters)
-        if take(wallet, int(amoun)):
-            folderbase.write(binascii.hexlify(hashlib.pbkdf2_hmac("sha256", password.encode(), b"salt", 1000000)).decode(), amoun)
-        return f'{amoun},{password}'
-    else:
-        return 'NO'
-def convert_file_to_coins(wallet, password, file_password : str):
-    if folderbase.ishere(binascii.hexlify(hashlib.pbkdf2_hmac("sha256", file_password.encode(), b"salt", 1000000)).decode()):
-        if auth(wallet, password, False):
-            give(wallet, folderbase.read(binascii.hexlify(hashlib.pbkdf2_hmac("sha256", file_password.encode(), b"salt", 1000000)).decode()))
-            folderbase.delete(binascii.hexlify(hashlib.pbkdf2_hmac("sha256", file_password.encode(), b"salt", 1000000)).decode())
-            return 'Coins recovered succesfully!'
-        else:
-            return 'Wrong password!'
-    else:
-        return 'Coin file is invalid!'
+requested_transactions = []
+def get_one_unvalidated_transaction(wallet):
+    data = ""
+    wallet = html.escape(wallet)
+    if folderbase.ishere(wallet):
+        for key in os.listdir('folderbase'):
+            if key.startswith('u.') and not key in requested_transactions:
+                data = key.replace('u.', '')
+                data += ','+hashlib.md5(f"{wallet},{folderbase.read(key).split(',')[1]},1".encode()).hexdigest()
+                requested_transactions.append(key)
+        if data != "":
+            return data
+    return 'NO'
+def got_signature_from_miner(signature, public_key, hash, wallet, signature2, hash2):
+    wallet = html.escape(wallet)
+    if folderbase.ishere('u.'+hash) and folderbase.ishere(wallet):
+        if boss.verify(signature, hash, public_key) and boss.verify(signature2, hash2, public_key) and hash2 == hashlib.md5(f"{wallet},{folderbase.read('u.'+hash).split(',')[1]},1".encode()).hexdigest():
+            requested_transactions.remove('u.'+hash)
+            folderbase.write(folderbase.read('n'), folderbase.read('u.'+hash)+f",{signature},{public_key}")
+            folderbase.write('n', str(int(folderbase.read('n'))+1))
+            folderbase.write(folderbase.read('n'), f"{wallet},{folderbase.read('u.'+hash).split(',')[1]},1,{signature2},{public_key}")
+            folderbase.write('n', str(int(folderbase.read('n'))+1))
+            folderbase.delete(folderbase.read('u.'+hash).split(',')[1]+"_txs")
+            folderbase.delete('u.'+hash)
+            return 'You recived 1 TRICK!'
+    return 'NO'
