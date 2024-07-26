@@ -78,6 +78,7 @@ else:
                             hash = rsa.encrypt(tx.text.split(',')[0].encode(), publickey).decode('Latin-1')
                             signature2 = rsa.sign(tx.text.split(',')[1].encode(), pri, 'SHA-256').hex()
                             print(requests.post(ip+"/validate", data= {'wallet' : rsa.encrypt(f'{a[0]}'.encode(), publickey).decode('Latin-1'), "sig" : signature.hex(), "pub": pub.save_pkcs1().decode(), 'hash' : hash, 'sig2' : signature2, 'hash2' : rsa.encrypt(tx.text.split(',')[1].encode(), publickey).decode('Latin-1')}).text)
+                        time.sleep(10)
     else:
             print(f"{colorama.Fore.RED}You have not been succesfully logged in!{colorama.Fore.RESET}")
 input('Press enter to exit.')
