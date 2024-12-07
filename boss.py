@@ -1,4 +1,4 @@
-import rsa, os.path
+import rsa, os
 
 if not os.path.exists('pub.rsa-key'):
     (publickey, privatekey) = rsa.newkeys(2048)
@@ -7,6 +7,12 @@ if not os.path.exists('pub.rsa-key'):
     f.close()
     f = open('pri.rsa-key', 'w')
     f.write(privatekey.save_pkcs1().decode('Latin-1'))
+    os.mkdir("folderbase")
+    f = open('./folderbase/n', 'w')
+    f.write("1")
+    f.close()
+    f = open('./folderbase/0', 'w')
+    f.write('')
     quit()
 
 pub = open('pub.rsa-key')
