@@ -46,7 +46,7 @@ else:
                 opt = input(f"{colorama.Fore.RED}1. Send{colorama.Fore.GREEN} \n2. Recive\n{colorama.Fore.CYAN}3. Start mining\n{colorama.Fore.RESET}Option number>")
                 if(opt == "1"):
                     if 'OK GOOD' in requests.post(ip+"/txs", data={'wallet' : a[0]}).text:
-                        print(f'{colorama.Fore.RED}You still have unverified transactions! Hang on tight while somebody validates you transactions.{colorama.Fore.RESET}')
+                        print(f'{colorama.Fore.RED}You still have unverified transactions! Hang on tight while somebody validates your transactions.{colorama.Fore.RESET}')
                         break
                     print(f"{colorama.Fore.YELLOW}A tax of 1 TRICK is applied to every transaction.\nIf the transaction looks like it didn't go through, wait 24h before reporting the problem.{colorama.Fore.RESET}")
                     amount = input("Amount>")

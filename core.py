@@ -1,4 +1,4 @@
-import hashlib, folderbase, os, binascii, boss, html
+import hashlib, folderbase, os, binascii, boss, html, time
 
 # Trick Coin V2.1
 
@@ -69,6 +69,7 @@ def get_one_unvalidated_transaction(wallet):
                 data = key.replace('u.', '')
                 data += ','+hashlib.md5(f"{wallet},{folderbase.read(key).split(',')[1]},1".encode()).hexdigest()
                 requested_transactions.append(key)
+                break
         if data != "":
             return data
     return 'NO'
@@ -83,5 +84,8 @@ def got_signature_from_miner(signature, public_key, hash, wallet, signature2, ha
             folderbase.write('n', str(int(folderbase.read('n'))+1))
             folderbase.delete(folderbase.read('u.'+hash).split(',')[1]+"_txs")
             folderbase.delete('u.'+hash)
+            if time.time() % 1000 == 0:
+                give(wallet, 1)
+                return 'You recived 2 TRICK!'
             return 'You recived 1 TRICK!'
     return 'NO'
