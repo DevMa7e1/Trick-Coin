@@ -1,6 +1,5 @@
 from core import *
 from flask import Flask, request
-import boss
 app = Flask(__name__)
 
 @app.route("/")
@@ -13,7 +12,7 @@ def new():
     return str(assign_wallet(user, password))
 @app.route("/transact", methods = ['POST'])
 def tr():
-    data = boss.get_password(str(request.form.get('data', False)))
+    data = str(request.form.get('data', False))
     data = data.split(',')
     _from = data[0]
     to = data[1]
@@ -47,17 +46,14 @@ def txs():
     if t_amount(wallet):
         return 'OK GOOD'
     return 'NO'
-@app.route('/getkey')
-def getkey():
-    return boss.get_public_key()
 @app.route('/getunv', methods = ['POST'])
 def getunv():
     return get_one_unvalidated_transaction(request.form.get('wallet'))
 @app.route('/validate', methods=['POST'])
 def validate():
-    hash = boss.get_password(str(request.form.get('hash', False)))
-    hash2 = boss.get_password(str(request.form.get('hash2', False)))
-    wallet = boss.get_password(str(request.form.get('wallet', False)))
+    hash = (str(request.form.get('hash', False)))
+    hash2 = (str(request.form.get('hash2', False)))
+    wallet = (str(request.form.get('wallet', False)))
     signature = request.form.get('sig')
     public_key = request.form.get('pub')
     signature2 = request.form.get('sig2')
