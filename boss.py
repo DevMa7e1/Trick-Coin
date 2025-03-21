@@ -1,6 +1,6 @@
 import rsa, os
 
-if not os.path.exists('pub.rsa-key'):
+if not os.path.exists('folderbase'):
     os.mkdir("folderbase")
     f = open('./folderbase/n', 'w')
     f.write("1")

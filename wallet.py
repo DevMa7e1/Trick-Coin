@@ -1,4 +1,4 @@
-import colorama, requests, os.path, time, rsa, multiprocessing
+import colorama, requests, os, time, rsa, binascii, time
 
 if __name__ == '__main__':
     print(f"""{colorama.Fore.RED}
@@ -7,14 +7,6 @@ if __name__ == '__main__':
     O   OOO   O  O     O O         O O O O   OOOOO  O    O    O      O
     O   O  O  O  OOOO  O  O         O   O    O   O  OOOO OOOO OOOO   O
 {colorama.Fore.RESET}""")
-def create(certs):
-    print("Thread started!")
-    starttime = time.time()
-    pub, pri = rsa.newkeys(4096)
-    stoptime = time.time()
-    print('Mining rate:', (1/((stoptime-starttime)/60)), 'cert/min')
-    certs.append((pub, pri))
-
 if __name__ == '__main__':
     wlet = ""
     pasw = ""
@@ -29,31 +21,36 @@ if __name__ == '__main__':
     if(not os.path.exists("setup")):
         if(input("Do you already have a wallet? Y/n>").lower() == "n"):
             user = input("Username>")
-            pasw = input("Password>")
-            wallet = requests.post(ip+"/new", data={"user":user, "password":pasw}).text
+            print("Generating your RSA certificate pair.")
+            (pub, priv) = rsa.newkeys(4096)
+            wallet = requests.post(ip+"/new", data={"user":user,"pubkey":pub.save_pkcs1().decode()}).text
             print("This is your wallet:", wallet)
             print(f"{colorama.Fore.GREEN}You have been succesfully logged in!{colorama.Fore.RESET}")
             f = open("setup", 'w')
-            f.write(f"{wallet},{pasw}")
+            f.write(f"{wallet},{priv.save_pkcs1().decode()}")
             f.close()
         else:
             wlet = input("Username>")
-            pasw = input("Password>")
-            if("OK GOOD" in requests.post(ip+"/auth", data={"user": wlet, "password":pasw}).text):
+            privkey = input("Path to private key>")
+            f = open(privkey)
+            privkey = rsa.PrivateKey.load_pkcs1(f.read().encode())
+            f.close()
+            if("OK GOOD" in requests.post(ip+"/auth", data={"user": wlet, "signed":binascii.hexlify(rsa.sign(wlet.encode(), privkey, 'SHA-256')).decode()}).text):
                 print(f"{colorama.Fore.GREEN}You have been succesfully logged in!{colorama.Fore.RESET}")
                 f = open("setup", 'w')
-                f.write(f"{wlet},{pasw}")
+                f.write(f"{wlet},{privkey.save_pkcs1().decode()}")
                 f.close()
             else:
                 print(f"{colorama.Fore.RED}You have not been succesfully logged in!{colorama.Fore.RESET}")
     else:
         f = open("setup")
         a = f.read().split(',')
-        if("OK GOOD" in requests.post(ip+"/auth", data={"user": a[0], "password":a[1]}).text):
+        privkey = rsa.PrivateKey.load_pkcs1(a[1].encode())
+        if("OK GOOD" in requests.post(ip+"/auth", data={"user": a[0], "signed":binascii.hexlify(rsa.sign(a[0].encode(), privkey, 'SHA-256')).decode()}).text):
                 print(f"{colorama.Fore.GREEN}You have been succesfully logged in!{colorama.Fore.RESET}")
                 while(True):
                     print(f"{colorama.Fore.BLUE}"+requests.post(ip+"/amount", data={"user": a[0]}).text, "TRICK", f"{colorama.Fore.RESET}")
-                    opt = input(f"{colorama.Fore.RED}1. Send{colorama.Fore.GREEN} \n2. Recive\n{colorama.Fore.CYAN}3. Start mining\n{colorama.Fore.RESET}Option number>")
+                    opt = input(f"{colorama.Fore.RED}1. Send{colorama.Fore.GREEN} \n2. Recive\n{colorama.Fore.CYAN}3. Start mining\n{colorama.Fore.RESET}{colorama.Fore.MAGENTA}4. Export private key{colorama.Fore.RESET}\nOption number>")
                     if(opt == "1"):
                         if 'OK GOOD' in requests.post(ip+"/txs", data={'wallet' : a[0]}).text:
                             print(f'{colorama.Fore.RED}You still have unverified transactions! Hang on tight while somebody validates your transactions.{colorama.Fore.RESET}')
@@ -66,7 +63,8 @@ if __name__ == '__main__':
                         to = input("Recipient user>")
                         sure = input(f"Total: {str(int(amount)+1)}. Are you sure you want to continue? Y/n>").upper()
                         if sure == 'Y':
-                            if("OK GOOD" in requests.post(ip+"/transact", data={"data" : f'{a[0]},{to},{amount},{a[1]}'}).text):
+                            random = str(int.from_bytes(os.urandom(1))+int.from_bytes(os.urandom(1))+int.from_bytes(os.urandom(1))+int.from_bytes(os.urandom(1))+int.from_bytes(os.urandom(1))+int.from_bytes(os.urandom(1)))
+                            if("OK GOOD" in requests.post(ip+"/transact", data={"data" : f'{a[0]},{to},{amount},{binascii.hexlify(rsa.sign(random.encode(), privkey, 'SHA-256')).decode()}'}).text):
                                 print(f"{colorama.Fore.GREEN}Transaction sent to validation!{colorama.Fore.RESET}")
                             else:
                                 print(f"{colorama.Fore.RED}Transaction was unsuccsessful!{colorama.Fore.RESET}")
@@ -75,25 +73,28 @@ if __name__ == '__main__':
                     elif(opt == "2"):
                         print(a[0])
                     elif(opt == "3"):
-                        certs = []
-                        threads = int(input("Number of threads>"))
-                        while True:
-                            manager = multiprocessing.Manager()
-                            certs = manager.list()
-                            with multiprocessing.Pool(processes=threads) as pool:
-                                pool.map(create, [certs] * threads)
-                            print(f'Generated {threads} new certificates!')
-                            while(len(certs) > 0):
-                                print('Waiting for task.')
-                                tx = requests.post(ip+"/getunv", data={'wallet' : a[0]})
-                                if tx.text != 'NO' and tx.status_code == 200:
-                                    print('Recived new task:',tx.text)
-                                    signature = rsa.sign(tx.text.split(',')[0].encode(), certs[0][1], 'SHA-256')
-                                    hash = tx.text.split(',')[0].encode()
-                                    signature2 = rsa.sign(tx.text.split(',')[1].encode(), certs[0][1], 'SHA-256').hex()
-                                    print(requests.post(ip+"/validate", data= {'wallet' : f'{a[0]}', "sig" : signature.hex(), "pub": certs[0][0].save_pkcs1().decode(), 'hash' : hash, 'sig2' : signature2, 'hash2' : tx.text.split(',')[1]}).text)
-                                    certs.pop()
-                                time.sleep(1)
+                        while(True):
+                            trx = requests.post(ip+"/getunv", data={"wallet":a[0]}).text
+                            if trx == "NO":
+                                print("No transactions to validate.")
+                                time.sleep(10)
+                            else:
+                                data = trx.split(',')
+                                pubkey = rsa.PublicKey.load_pkcs1(data[2].encode())
+                                secret = 0
+                                for i in range(1536):
+                                    print(i, 'out of', 1536, end='\r')
+                                    try:
+                                        rsa.verify(str(i).encode(), bytes.fromhex(data[1]), pubkey)
+                                        secret = i
+                                        break
+                                    except:
+                                        pass
+                                print()
+                            if requests.post(ip+"/validate", data={'wallet' : a[0], 'secret': str(secret), 'hash': data[0]}).text == 'OK GOOD':
+                                print(f"{colorama.Fore.GREEN}Transaction validated!{colorama.Fore.RESET}")
+                    elif(opt == "4"):
+                        print(f"{colorama.Fore.CYAN}Private key:{colorama.Fore.GREEN}\n{a[1]}{colorama.Fore.RESET}")
         else:
                 print(f"{colorama.Fore.RED}You have not been succesfully logged in!{colorama.Fore.RESET}")
     input('Press enter to exit.')

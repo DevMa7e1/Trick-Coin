@@ -8,8 +8,8 @@ def home():
 @app.route("/new", methods = ['POST'])
 def new():
     user = str(request.form['user'])
-    password = str(request.form['password'])
-    return str(assign_wallet(user, password))
+    pubkey = str(request.form['pubkey'])
+    return str(assign_wallet(user, pubkey))
 @app.route("/transact", methods = ['POST'])
 def tr():
     data = str(request.form.get('data', False))
@@ -17,8 +17,8 @@ def tr():
     _from = data[0]
     to = data[1]
     amoun = data[2]
-    password = data[3]
-    if transact(_from, to, int(amoun), password):
+    signed_message = data[3]
+    if transact(_from, to, int(amoun), signed_message):
         return "OK GOOD"
     return 'NO'
 @app.route("/amount", methods= ["POST"])
@@ -31,9 +31,9 @@ def amy():
 @app.route('/auth', methods= ["POST"])
 def au():
     ah = request.form['user']
-    password = request.form['password']
+    signed_message = request.form['signed']
     if ah != '':
-        if auth(ah, password):
+        if auth(ah, signed_message):
             return "OK GOOD"
     return 'NO'
 @app.route("/gettx", methods= ["POST"])
@@ -51,11 +51,10 @@ def getunv():
     return get_one_unvalidated_transaction(request.form.get('wallet'))
 @app.route('/validate', methods=['POST'])
 def validate():
+    secret_id = (str(request.form.get('secret', False)))
     hash = (str(request.form.get('hash', False)))
-    hash2 = (str(request.form.get('hash2', False)))
     wallet = (str(request.form.get('wallet', False)))
-    signature = request.form.get('sig')
-    public_key = request.form.get('pub')
-    signature2 = request.form.get('sig2')
-    return got_signature_from_miner(signature, public_key, hash, wallet, signature2, hash2)
+    if validate_transaction_and_send_reward(wallet, hash, secret_id):
+        return 'OK GOOD'
+    return 'NO'
 app.run("0.0.0.0", 9314, False)
